@@ -18,7 +18,7 @@ podman run -ti --rm --name ose-openshift -e OPTS="-v -e app_version=1-1 -e names
 ```
 3. Expose the app
 ```bash
-oc create route edge --service=frontend --port=8080 --insecure-policy=Redirect
+oc create route edge --service=frontend --port=8080 --insecure-policy=Redirect -n carinfo
 ROUTE=$(echo -n 'https://' && oc -n carinfo get route frontend -o jsonpath='{.spec.host}')
 ```
 4. Generate traffic

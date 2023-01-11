@@ -21,6 +21,50 @@ podman run -ti --rm --name ose-openshift -e OPTS="-v -e app_version=1-1 -e names
 oc create route edge --service=frontend --port=8080 --insecure-policy=Redirect -n carinfo
 ROUTE=$(echo -n 'https://' && oc -n carinfo get route frontend -o jsonpath='{.spec.host}')
 ```
+
+* Gateway
+```bash
+suffix="apps.$(oc whoami --show-console | awk -F'apps.' '{print $2}')"
+
+cat > gateway.yaml << EOF
+apiVersion: networking.istio.io/v1alpha3
+kind: Gateway
+metadata:
+  name: carinfo-gateway
+spec:
+  selector:
+    istio: ingressgateway # use istio default controller
+  servers:
+  - port:
+      number: 443
+      name: https
+      protocol: HTTPS
+    hosts:
+    - carinfo.$suffix
+    tls:
+      mode: SIMPLE
+      serverCertificate: /tmp/tls.crt
+      privateKey: /tmp/tls.key
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: carinfo
+spec:
+  hosts:
+  - "*"
+  gateways:
+  - carinfo-gateway
+  http:
+    route:
+    - destination:
+        host: carinfo
+        port:
+          number: 8080
+EOF
+
+oc apply -f gateway.yaml
+```
 4. Generate traffic
 ```bash
 curl -k -s -H 'Content-Type: application/json' -d '{"Manufacture": "Alfa Romeo","Module": "Jullieta"}' ${ROUTE}/query | jq

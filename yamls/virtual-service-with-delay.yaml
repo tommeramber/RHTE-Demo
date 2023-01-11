@@ -1,0 +1,23 @@
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: frontend
+  name: carinfo
+spec:
+  hosts:
+  - carinfo.SUFFIX
+  - frontend-1-1.carinfo.svc.cluster.local
+  gateways:
+  - carinfo-frontend-gateway
+  http:
+    - fault:
+        delay:
+          fixedDelay: 15s
+          percentage:
+            value: 50
+      route:
+      - destination:
+          host: frontend-1-1.carinfo.svc.cluster.local
+          port:
+            number: 8080

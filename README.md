@@ -41,3 +41,11 @@ curl -k -s -H 'Content-Type: application/json' -d '{"Manufacture": "Alfa Romeo",
 cd ~/curl-statistics
 curl -w "@loop_curl_statistics.txt" -k -s -H 'Content-Type: application/json' -d '{"Manufacture": "Alfa Romeo","Module": "Jullieta"}' ${ROUTE}/query | jq
 ```
+
+
+## 6. Inject Delay
+```bash
+sed "s,SUFFIX,apps.$(oc whoami --show-console | awk -F'apps.' '{print $2}'),g" yamls/virtual-service-with-delay.yaml| oc apply -f -
+
+for i in {0..1000} ; do curl -k -s -H 'Content-Type: application/json' -d '{"Manufacture": "Alfa Romeo","Module": "Jullieta"}' ${ROUTE}/query | jq ; done
+```

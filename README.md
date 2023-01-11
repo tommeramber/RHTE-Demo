@@ -1,10 +1,12 @@
 # Instructions
 1. Service Mesh Setup
 ```bash
+cd yamls
 oc apply -f ns-carinfo.yaml
 oc apply -f ns-smcp.yaml
 oc apply -f smcp.yaml
 oc apply -f smmr.yaml
+cd ..
 ```
 2. Run AnsibleCarinfo Playbook
 ```bash
@@ -21,32 +23,20 @@ podman run -ti --rm --name ose-openshift -e OPTS="-v -e app_version=1-1 -e names
 ```bash
 suffix="apps.$(oc whoami --show-console | awk -F'apps.' '{print $2}')"
 
-sed -i "s,SUFFIX,apps.$(oc whoami --show-console | awk -F'apps.' '{print $2}'),g" gateway.yaml
+sed "s,SUFFIX,apps.$(oc whoami --show-console | awk -F'apps.' '{print $2}'),g" yamls/gateway.yaml | oc apply -f - 
 
-oc apply -f gateway.yaml
 ```
+
 4. Generate traffic
 ```bash
-oc get route -n rhte-service-mesh-control-plane | grep carinfo.$suffix
 ROUTE=$(echo "carinfo.$suffix")
+
 curl -k -s -H 'Content-Type: application/json' -d '{"Manufacture": "Alfa Romeo","Module": "Jullieta"}' ${ROUTE}/query | jq
 ```
 
 
 5. Statistics of proper state
 ```bash
-mkdir ~/curl-statistics; cd ~/curl-statistics ; touch loop_curl_statistics.txt
-
-cat > loop_curl_statistics.txt << EOF
-     time_namelookup:  %{time_namelookup}s\n
-        time_connect:  %{time_connect}s\n
-     time_appconnect:  %{time_appconnect}s\n
-    time_pretransfer:  %{time_pretransfer}s\n
-       time_redirect:  %{time_redirect}s\n
-  time_starttransfer:  %{time_starttransfer}s\n
-                     ----------\n
-          time_total:  %{time_total}s\n
-EOF
-
+cd ~/curl-statistics
 curl -w "@loop_curl_statistics.txt" -k -s -H 'Content-Type: application/json' -d '{"Manufacture": "Alfa Romeo","Module": "Jullieta"}' ${ROUTE}/query | jq
 ```

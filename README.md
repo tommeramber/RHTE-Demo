@@ -50,5 +50,5 @@ sed "s,SUFFIX,apps.$(oc whoami --show-console | awk -F'apps.' '{print $2}'),g" y
 for i in {0..1000} ; do curl -k -s -H 'Content-Type: application/json' -d '{"Manufacture": "Alfa Romeo","Module": "Jullieta"}' ${ROUTE}/query | jq ; done
 ```
 
-![screenshot](https://user-images.githubusercontent.com/60185557/211827869-0a7accf9-2fe9-4a28-9ea5-91f31930b437.PNG)
+![screenshot](https://user-images.githubusercontent.com/60185557/211831556-5020f83c-a83a-4e0e-a802-f16011f090c3.PNG)
 

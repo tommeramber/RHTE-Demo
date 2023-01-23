@@ -12,10 +12,10 @@ spec:
   - carinfo-frontend-gateway
   http:
     - fault:
-        abort:
-          httpStatus: 503
+        delay:
+          fixedDelay: 10s
           percentage:
-            value: 80
+            value: 100
       route:
       - destination:
           host: frontend-1-1.carinfo.svc.cluster.local

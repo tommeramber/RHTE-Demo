@@ -18,36 +18,54 @@ cd AnsibleCarinfo
 
 cp ~/.kube/config kubeconfig
 
-podman run -ti --rm --name ose-openshift -e OPTS="-v -e app_version=1-1 -e namespace=carinfo" -v ${HOME}/AnsibleCarinfo/src/:/opt/app-root/src/:Z,rw -v ${HOME}/AnsibleCarinfo/:/opt/app-root/ose-ansible/:Z,ro -e PLAYBOOK_FILE=/opt/app-root/ose-ansible/playbook.yaml -e K8S_AUTH_KUBECONFIG=/opt/app-root/ose-ansible/kubeconfig -e INVENTORY=/opt/app-root/ose-ansible/inventory -e K8S_AUTH_API_KEY=$(oc whoami -t)  -e DEFAULT_LOCAL_TMP=/tmp/  -e K8S_AUTH_HOST=$(oc whoami --show-server) -e K8S_AUTH_VALIDATE_CERTS=false quay.io/two.oes/ose-openshift
+mkdir src
+
+podman run -ti --rm --name ose-openshift -e OPTS="-v -e app_version=1-1 -e namespace=carinfo" -v $(pwd)/src/:/opt/app-root/src/:Z,rw -v $(pwd)/:/opt/app-root/ose-ansible/:Z,ro -e PLAYBOOK_FILE=/opt/app-root/ose-ansible/playbook.yaml -e K8S_AUTH_KUBECONFIG=/opt/app-root/ose-ansible/kubeconfig -e INVENTORY=/opt/app-root/ose-ansible/inventory -e K8S_AUTH_API_KEY=$(oc whoami -t)  -e DEFAULT_LOCAL_TMP=/tmp/  -e K8S_AUTH_HOST=$(oc whoami --show-server) -e K8S_AUTH_VALIDATE_CERTS=false quay.io/two.oes/ose-openshift
 ```
 
-## 3. Gateway & VirtualService & DestinationRule
+## 3. Patch the deployment and the statefulset with the 'inject' annotations :
 ```bash
-suffix="apps.$(oc whoami --show-console | awk -F'apps.' '{print $2}')"
 
+oc patch deployment dbapi-1-1 -p '{ "spec": { "template": { "metadata": { "annotations": {"sidecar.istio.io/inject": "true"}}}}}'
+oc patch deployment frontend-1-1 -p '{ "spec": { "template": { "metadata": { "annotations": {"sidecar.istio.io/inject": "true"}}}}}'
+oc patch statfulset mariadb-1-1 -p '{ "spec": { "template": { "metadata": { "annotations": {"sidecar.istio.io/inject": "true"}}}}}'
+
+```
+
+
+## 4. Gateway & VirtualService & DestinationRule
+```bash
 sed "s,SUFFIX,apps.$(oc whoami --show-console | awk -F'apps.' '{print $2}'),g" yamls/gateway.yaml | oc apply -f - 
 ```
 
-## 4. Generate traffic
+## 5. Generate traffic
 ```bash
-ROUTE=$(echo "carinfo.$suffix")
+suffix="apps.$(oc whoami --show-console | awk -F'apps.' '{print $2}')"
+
+ROUTE=$(echo -n 'http://' && echo "carinfo.$suffix")
 
 curl -k -s -H 'Content-Type: application/json' -d '{"Manufacture": "Alfa Romeo","Module": "Jullieta"}' ${ROUTE}/query | jq
 ```
 
 
-## 5. Statistics of proper state
+## 6. Statistics of proper state
 ```bash
-cd ~/curl-statistics
-curl -w "@loop_curl_statistics.txt" -k -s -H 'Content-Type: application/json' -d '{"Manufacture": "Alfa Romeo","Module": "Jullieta"}' ${ROUTE}/query | jq
+
+cd curl-statistics
+
+curl -w "@loop_curl_statistics.txt" -k -s -H 'Content-Type: application/json' -d '{"Manufacture": "Alfa Romeo","Module": "Jullieta"}' ${ROUTE}/query -o /dev/null
+
+cd ..
 ```
 
 
-## 6. Inject Delay
+## 7. Inject Delay
 ```bash
+
+for i in {0..1000} ; do curl -w "@curl-statistics/loop_curl_statistics.txt -k -s -H 'Content-Type: application/json' -d '{"Manufacture": "Alfa Romeo","Module": "Jullieta"}' ${ROUTE}/query -o /dev/null 2>/dev/null ;sleep 0.5 ;  done
+
 sed "s,SUFFIX,apps.$(oc whoami --show-console | awk -F'apps.' '{print $2}'),g" yamls/virtual-service-with-error.yaml| oc apply -f -
 
-for i in {0..1000} ; do curl -k -s -H 'Content-Type: application/json' -d '{"Manufacture": "Alfa Romeo","Module": "Jullieta"}' ${ROUTE}/query | jq 2>/dev/null ; done
 ```
 
 ![screenshot](https://user-images.githubusercontent.com/60185557/211831556-5020f83c-a83a-4e0e-a802-f16011f090c3.PNG)

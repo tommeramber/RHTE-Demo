@@ -26,9 +26,10 @@ podman run -ti --rm --name ose-openshift -e OPTS="-v -e app_version=1-1 -e names
 ## 3. Patch the deployment and the statefulset with the 'inject' annotations :
 ```bash
 
+oc patch statefulset mariadb-1-1 -p '{ "spec": { "template": { "metadata": { "annotations": {"sidecar.istio.io/inject": "true"}}}}}'
+sleep 5
 oc patch deployment dbapi-1-1 -p '{ "spec": { "template": { "metadata": { "annotations": {"sidecar.istio.io/inject": "true"}}}}}'
 oc patch deployment frontend-1-1 -p '{ "spec": { "template": { "metadata": { "annotations": {"sidecar.istio.io/inject": "true"}}}}}'
-oc patch statfulset mariadb-1-1 -p '{ "spec": { "template": { "metadata": { "annotations": {"sidecar.istio.io/inject": "true"}}}}}'
 
 ```
 

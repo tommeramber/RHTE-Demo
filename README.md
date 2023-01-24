@@ -63,7 +63,7 @@ cd ..
 ## 7. Inject Delay
 ```bash
 
-for i in {0..1000} ; do curl -w "@curl-statistics/loop_curl_statistics.txt -k -s -H 'Content-Type: application/json' -d '{"Manufacture": "Alfa Romeo","Module": "Jullieta"}' ${ROUTE}/query -o /dev/null 2>/dev/null ;sleep 0.5 ;  done
+for i in {0..1000} ; do curl -w "@curl-statistics/loop_curl_statistics.txt" -k -s -H 'Content-Type: application/json' -d '{"Manufacture": "Alfa Romeo","Module": "Jullieta"}' ${ROUTE}/query -o /dev/null ;sleep 0.5 ;  done
 
 sed "s,SUFFIX,apps.$(oc whoami --show-console | awk -F'apps.' '{print $2}'),g" yamls/virtual-service-with-error.yaml| oc apply -f -
 

@@ -26,9 +26,10 @@ podman run -ti --rm --name ose-openshift -e OPTS="-v -e app_version=1-1 -e names
 ## 3. Patch the deployment and the statefulset with the 'inject' annotations :
 ```bash
 
+oc patch statefulset mariadb-1-1 -p '{ "spec": { "template": { "metadata": { "annotations": {"sidecar.istio.io/inject": "true"}}}}}'
+sleep 5
 oc patch deployment dbapi-1-1 -p '{ "spec": { "template": { "metadata": { "annotations": {"sidecar.istio.io/inject": "true"}}}}}'
 oc patch deployment frontend-1-1 -p '{ "spec": { "template": { "metadata": { "annotations": {"sidecar.istio.io/inject": "true"}}}}}'
-oc patch statfulset mariadb-1-1 -p '{ "spec": { "template": { "metadata": { "annotations": {"sidecar.istio.io/inject": "true"}}}}}'
 
 ```
 
@@ -62,7 +63,7 @@ cd ..
 ## 7. Inject Delay
 ```bash
 
-for i in {0..1000} ; do curl -w "@curl-statistics/loop_curl_statistics.txt -k -s -H 'Content-Type: application/json' -d '{"Manufacture": "Alfa Romeo","Module": "Jullieta"}' ${ROUTE}/query -o /dev/null 2>/dev/null ;sleep 0.5 ;  done
+for i in {0..1000} ; do curl -w "@curl-statistics/loop_curl_statistics.txt" -k -s -H 'Content-Type: application/json' -d '{"Manufacture": "Alfa Romeo","Module": "Jullieta"}' ${ROUTE}/query -o /dev/null ;sleep 0.5 ;  done
 
 sed "s,SUFFIX,apps.$(oc whoami --show-console | awk -F'apps.' '{print $2}'),g" yamls/virtual-service-with-error.yaml| oc apply -f -
 
